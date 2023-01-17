@@ -1,7 +1,7 @@
 resource "local_file" "auth_lambda_file" {
-  filename = "${path.module}/okta_auth_lambda_package/okta_auth.js"
+  filename = "${path.module}/auth_lambda_package/auth.js"
 
-  content = templatefile("${path.module}/okta_auth.js.tpl", {
+  content = templatefile("${path.module}/auth.js.tpl", {
     ssm_param_name_jwt_secret = aws_ssm_parameter.jwt_secret.name,
 
     ssm_param_name_okta_client_id     = aws_ssm_parameter.okta_client_id.name,
@@ -15,8 +15,8 @@ resource "local_file" "auth_lambda_file" {
 
 data "archive_file" "auth_lambda_package" {
   type        = "zip"
-  source_dir  = "${path.module}/okta_auth_lambda_package"
-  output_path = "${path.module}/okta_auth.zip"
+  source_dir  = "${path.module}/auth_lambda_package"
+  output_path = "${path.module}/auth.zip"
 
   depends_on = [local_file.auth_lambda_file]
 }
@@ -28,7 +28,7 @@ resource "aws_lambda_function" "auth" {
   source_code_hash = data.archive_file.auth_lambda_package.output_base64sha256
 
   runtime = "nodejs12.x"
-  handler = "okta_auth.okta_auth"
+  handler = "auth.auth"
 
   publish = true
 }

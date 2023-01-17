@@ -1,11 +1,11 @@
 locals {
-  project = "test-for-blogpost"
+  project = "clustrex-auth"
 
   bucket_root_object = "index.html"
 }
 
 resource "aws_s3_bucket" "test" {
-  bucket = "${local.project}-aws-s3-okta"
+  bucket = "${local.project}-aws-s3-auth0"
   acl    = "private"
 
   website {
@@ -13,7 +13,7 @@ resource "aws_s3_bucket" "test" {
   }
 }
 
-module "aws-s3-okta" {
+module "aws-s3-auth" {
   source = "../module"
 
   project = local.project
@@ -41,5 +41,5 @@ module "aws-s3-okta" {
 
 // Use this output to allow the redirect URI in your Okta app.
 output "okta_redirect_uri" {
-  value = module.aws-s3-okta.okta_redirect_uri
+  value = module.aws-s3-auth.okta_redirect_uri
 }

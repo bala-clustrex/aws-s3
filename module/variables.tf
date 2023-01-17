@@ -1,5 +1,5 @@
 locals {
-  project = "${var.project}-s3-okta"
+  project = "${var.project}-s3-auth0"
 
   s3_origin_id = local.project
 }
@@ -39,7 +39,7 @@ variable "okta_domain" {
 }
 
 variable "auth_cookie_name" {
-  description = "Name of the authentication cookie (default: {var.project}-s3-okta)."
+  description = "Name of the authentication cookie (default: {var.project}-s3-auth0)."
   default     = ""
 }
 

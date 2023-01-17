@@ -1,0 +1,19 @@
+{
+  "name": "auth_lambda_package",
+  "version": "1.0.0",
+  "description": "Lambda@Edge that provides authentication with auth0 for an S3 static website behind a CloudFront distribution.",
+  "main": "auth.js",
+  "repository": "https://github.com/GuiTeK/aws-s3-oauth2-auth0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "guillaume.truchot@outlook.com",
+  "license": "MIT",
+  "dependencies": {
+    "cookie": "^0.4.1",
+    "jsonwebtoken": "^8.5.1"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.830.0"
+  }
+}

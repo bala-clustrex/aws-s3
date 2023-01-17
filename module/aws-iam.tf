@@ -34,8 +34,8 @@ data "aws_iam_policy_document" "allow_ssm_parameters_for_auth_lambda" {
     effect  = "Allow"
     actions = ["ssm:GetParameter*"]
     resources = [
-      aws_ssm_parameter.jwt_secret.arn, aws_ssm_parameter.okta_client_id.arn, aws_ssm_parameter.okta_client_secret.arn,
-      aws_ssm_parameter.okta_domain.arn, aws_ssm_parameter.auth_cookie_name.arn,
+      aws_ssm_parameter.jwt_secret.arn, aws_ssm_parameter.auth0_client_id.arn, aws_ssm_parameter.auth0_client_secret.arn,
+      aws_ssm_parameter.auth0_domain.arn, aws_ssm_parameter.auth_cookie_name.arn,
       aws_ssm_parameter.auth_cookie_ttl_sec.arn
     ]
   }

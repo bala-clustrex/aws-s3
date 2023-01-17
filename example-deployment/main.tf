@@ -21,14 +21,14 @@ module "aws-s3-auth" {
   s3_bucket_name                = aws_s3_bucket.test.id
   s3_bucket_default_root_object = local.bucket_root_object
 
-  okta_client_id     = var.okta_client_id
-  okta_client_secret = var.okta_client_secret
-  okta_domain        = var.okta_domain
+  auth0_client_id     = var.auth0_client_id
+  auth0_client_secret = var.auth0_client_secret
+  auth0_domain        = var.auth0_domain
 
   // Uncomment the two lines below if you want to use a CUSTOM DOMAIN.
   // You will need to:
   // * Create a CNAME DNS record (example.com in the example below) which points to
-  //   module.aws-s3-okta.cloudfront_distribution_domain_name.
+  //   module.aws-s3-auth0.cloudfront_distribution_domain_name.
   // * Create an ACM certificate for the domain you want to use (example.com in the example below).
   //cloudfront_alias = "example.com"
   //cloudfront_acm_certificate_arn = "..."
@@ -39,7 +39,7 @@ module "aws-s3-auth" {
   }
 }
 
-// Use this output to allow the redirect URI in your Okta app.
-output "okta_redirect_uri" {
-  value = module.aws-s3-auth.okta_redirect_uri
+// Use this output to allow the redirect URI in your auth0 app.
+output "auth0_redirect_uri" {
+  value = module.aws-s3-auth.auth0_redirect_uri
 }

@@ -4,22 +4,22 @@ resource "aws_ssm_parameter" "jwt_secret" {
   value = random_password.jwt_secret.result
 }
 
-resource "aws_ssm_parameter" "okta_client_id" {
-  name  = "${local.project}-okta-client-id"
+resource "aws_ssm_parameter" "auth0_client_id" {
+  name  = "${local.project}-auth0-client-id"
   type  = "SecureString"
-  value = var.okta_client_id
+  value = var.auth0_client_id
 }
 
-resource "aws_ssm_parameter" "okta_client_secret" {
-  name  = "${local.project}-okta-client-secret"
+resource "aws_ssm_parameter" "auth0_client_secret" {
+  name  = "${local.project}-auth0-client-secret"
   type  = "SecureString"
-  value = var.okta_client_secret
+  value = var.auth0_client_secret
 }
 
-resource "aws_ssm_parameter" "okta_domain" {
-  name  = "${local.project}-okta-domain"
+resource "aws_ssm_parameter" "auth0_domain" {
+  name  = "${local.project}-auth0-domain"
   type  = "SecureString"
-  value = var.okta_domain
+  value = var.auth0_domain
 }
 
 resource "aws_ssm_parameter" "auth_cookie_name" {

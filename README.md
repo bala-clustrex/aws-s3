@@ -1,5 +1,5 @@
-# S3 OAuth2 Authentication with Okta
-This module provides OAuth2 authentication with Okta for an **existing** S3 bucket configured as static website.
+# S3 OAuth2 Authentication with auth0
+This module provides OAuth2 authentication with auth0 for an **existing** S3 bucket configured as static website.
 
 The resources created by this module will be deployed in `us-east-1` because Lambda@Edge can only be deployed in this region (the Lambda is then replicated all over the world by AWS).
 
@@ -9,25 +9,25 @@ The Lambda is written in NodeJS because Lambda@Edge requires that the **Lambda p
 
 
 ## Deployment
-A Terraform deployment example is provided in the `./aws-s3-oauth2-okta/example-deployment` folder.
+A Terraform deployment example is provided in the `./aws-s3-oauth2-auth0/example-deployment` folder.
 
-### 1. Create the Okta application
+### 1. Create the auth0 application
 Create the application with the correct **redirect URI** and retrieve the **client ID** and **client secret**.
   
 ### 2. Install NPM packages
-Go to `./aws-s3-oauth2-okta/module/okta_auth_lambda_package` and run `npm install --only=prod`.
+Go to `./aws-s3-oauth2-auth0/module/auth0_auth_lambda_package` and run `npm install --only=prod`.
 
 ### 3. Apply!
 We assume here that you have an AWS environment configured locally.
 
-Go back to `./aws-s3-oauth2-okta/example-deployment` and run:
+Go back to `./aws-s3-oauth2-auth0/example-deployment` and run:
 1. Initialize Terraform: `terraform init`
 2. Apply:
 ```bash
 TF_VAR_aws_account_id=${AWS_ACCOUNT_ID} \
-TF_VAR_okta_client_id=${OKTA_CLIENT_ID} \
-TF_VAR_okta_client_secret=${OKTA_CLIENT_SECRET} \
-TF_VAR_okta_domain=${OKTA_DOMAIN} \
+TF_VAR_auth0_client_id=${auth0_CLIENT_ID} \
+TF_VAR_auth0_client_secret=${auth0_CLIENT_SECRET} \
+TF_VAR_auth0_domain=${auth0_DOMAIN} \
 terraform apply
 ```
 
@@ -41,9 +41,9 @@ The bucket access is configured as **private** and so the only way to access it 
 The CloudFront distribution has a **Lambda@Edge configured on the `viewer-request` event** (see image below). It means that every time a request is made, **it first goes through the Lambda** before reaching the Origin (the S3 bucket).
 
 The Lambda will then decide what to do based on the **authentication Cookie** that the user submitted (or not) in the request. It will either:
-* Redirect the user to Okta if there is no Cookie or if it is invalid/expired
-* Display a `401 Unauthorized` response if Okta returned an invalid Auth Code
-* Redirect the user to `/index.html` if the login was successful (i.e. Okta returned a valid Auth Code)
+* Redirect the user to auth0 if there is no Cookie or if it is invalid/expired
+* Display a `401 Unauthorized` response if auth0 returned an invalid Auth Code
+* Redirect the user to `/index.html` if the login was successful (i.e. auth0 returned a valid Auth Code)
 * Allow the request to continue to the Origin if the authentication Cookie is valid
 
 Note: the authentication cookie actually contains a **signed JWT**, that's how the Lambda knows it is legit.

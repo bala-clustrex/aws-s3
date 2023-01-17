@@ -1,4 +1,4 @@
-# Adding OAuth2 authentication to an AWS S3 static bucket with Okta
+# Adding OAuth2 authentication to an AWS S3 static bucket with auth0
 Our team recently implemented an internal corporate static website that allows employees to download technical reports.
 
 Since we're heavy AWS users, we naturally decided to host it on AWS S3, which provides a dedicated feature to build static websites ([S3 static website hosting](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html)).
@@ -9,9 +9,9 @@ We needed to find a solution to secure our internal static website on AWS S3.
 
 ## Discovering the solution with CloudFront and Lambda@Edge
 
-We use [Okta](https://www.okta.com/) for all Identity and User Management, so whatever solution we found had to plug-in with Okta.
+We use [auth0](https://www.auth0.com/) for all Identity and User Management, so whatever solution we found had to plug-in with auth0.
 
-Okta has several authentication/authorization flows, all of which require the application to perform a back-end check, such as verifying that the response/token returned by Okta is legit.
+auth0 has several authentication/authorization flows, all of which require the application to perform a back-end check, such as verifying that the response/token returned by auth0 is legit.
 
 So we needed to find a way to carry these checks/actions on a static website which uses a back end that we don't control. That's when we learned about [AWS Lambda@Edge](https://aws.amazon.com/lambda/edge/), which lets you run [Lambda Functions](https://aws.amazon.com/lambda/) at different stages of a request and response to and from CloudFront:
 
@@ -31,7 +31,7 @@ We saw a solution to our original issue: trigger a Lambda at the `viewer-request
 
 ## Implementing the Lambda@Edge function
 
-We'll cover here the key elements and main issues we faced. The complete code is available [here](https://github.com/GuiTeK/aws-s3-oauth2-okta). Feel free to use it in your project!
+We'll cover here the key elements and main issues we faced. The complete code is available [here](https://github.com/GuiTeK/aws-s3-oauth2-auth0). Feel free to use it in your project!
 
 ### Lambda@Edge restrictions and caveats
 
@@ -57,34 +57,34 @@ Lambda@Edge functions can **only be created in the `us-east-1` region**. It's no
 
 The IAM execution role associated with the Lambda@Edge functions **must allow the principal service `edgelambda.amazonaws.com`** in addition to the usual `lambda.amazonaws.com`. See [AWS - Setting IAM permissions and roles for Lambda@Edge](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-edge-permissions.html).
 
-### Authorization mechanism with Okta
+### Authorization mechanism with auth0
 
 Once we managed the above restrictions and caveats, we focused on the authorization/authorization.
 
-Okta offers several ways to authenticate and authorize users. We decided to go with **OAuth2**, the industry-standard protocol for authorization.
+auth0 offers several ways to authenticate and authorize users. We decided to go with **OAuth2**, the industry-standard protocol for authorization.
 
 **Note**
-Okta implements the **OpenID Connect (OIDC) standard** which adds a thin authentication layer on top of OAuth2 (that's the purpose of the ID token mentioned hereafter). Our solution would also work with pure OAuth2 with minimal modifications (removal of the ID token use in the code).
+auth0 implements the **OpenID Connect (OIDC) standard** which adds a thin authentication layer on top of OAuth2 (that's the purpose of the ID token mentioned hereafter). Our solution would also work with pure OAuth2 with minimal modifications (removal of the ID token use in the code).
 
-OAuth2 itself offers several _authorization flows_ depending on the kind of application using it. In our case, we need the [Authorization Code flow](https://developer.okta.com/docs/guides/implement-grant-type/authcode/main/).
+OAuth2 itself offers several _authorization flows_ depending on the kind of application using it. In our case, we need the [Authorization Code flow](https://developer.auth0.com/docs/guides/implement-grant-type/authcode/main/).
 
-Here is the complete diagram of the Authorization Code flow taken from [developer.okta.com](https://developer.okta.com/docs/guides/implement-grant-type/authcode/main/) that shows how it works:
+Here is the complete diagram of the Authorization Code flow taken from [developer.auth0.com](https://developer.auth0.com/docs/guides/implement-grant-type/authcode/main/) that shows how it works:
 
 <div align="center"><img src="oauth-auth-code-grant-flow.png" alt="OAuth2 Authorization code flow diagram"/></div>
 
-1. Our Lambda Function redirects the user to Okta where they will be prompted to login
-2. Okta redirects the user to our website/Lambda Function with a _code_
-3. Our Lambda Function checks if the code is legit and exchanges it for access and ID _tokens_ by sending a request to Okta 
-4. Depending on the result returned by Okta, we:
+1. Our Lambda Function redirects the user to auth0 where they will be prompted to login
+2. auth0 redirects the user to our website/Lambda Function with a _code_
+3. Our Lambda Function checks if the code is legit and exchanges it for access and ID _tokens_ by sending a request to auth0 
+4. Depending on the result returned by auth0, we:
    * Allow or deny access to the restricted content
    * If access is allowed, save the access and ID tokens in a cookie to avoid having to re-authorize the user on every page
 
 ### Using JSON Web Tokens to store authorization result
 
-So far we have a working authorization process; however, we need to check the access/ID token on **every request** (a malicious user could forge an invalid cookie/tokens). Checking the tokens means sending a request to Okta and waiting for the response on **every page** the user visits, which **slows down the loading times significantly** and is clearly sub-optimal.
+So far we have a working authorization process; however, we need to check the access/ID token on **every request** (a malicious user could forge an invalid cookie/tokens). Checking the tokens means sending a request to auth0 and waiting for the response on **every page** the user visits, which **slows down the loading times significantly** and is clearly sub-optimal.
 
 **Note** 
-While local verification of the Okta token is _theoretically possible_, as of this writing [the SDK provided by Okta](https://github.com/okta/okta-jwt-verifier-js) uses a _LRU_ (in-memory) cache when fetching the keys used to check the tokens. Because we're using AWS Lambda, and memory/state of the program isn't kept between invocations, the SDK is useless to us: it would still send one HTTP request to Okta for every user request, to retrieve the JWKs (JSON Web Keys). Worse, there is a limitation of 10 JWK requests per minute, which would make our solution stop working if there is more than 10 requests per minute.
+While local verification of the auth0 token is _theoretically possible_, as of this writing [the SDK provided by auth0](https://github.com/auth0/auth0-jwt-verifier-js) uses a _LRU_ (in-memory) cache when fetching the keys used to check the tokens. Because we're using AWS Lambda, and memory/state of the program isn't kept between invocations, the SDK is useless to us: it would still send one HTTP request to auth0 for every user request, to retrieve the JWKs (JSON Web Keys). Worse, there is a limitation of 10 JWK requests per minute, which would make our solution stop working if there is more than 10 requests per minute.
 
 We decided to use **[JSON Web Tokens](https://jwt.io/introduction)** to work around this. The initial authorization process is the same except that, instead of saving the access/ID tokens into a cookie, we create a JWT containing these tokens, and then save the JWT into a cookie.
 
@@ -96,14 +96,14 @@ Since the JWT is cryptographically signed:
 
 The JWT has a **pre-defined expiration time which should be reasonably short**, to avoid having a valid JWT containing expired or revoked access/ID tokens. Another option would be to check the access/ID tokens regularly and revoke the associated JWT if needed, but then we would need a revocation mechanism, which would makes things more complex.
 
-Finally, as suggested above, the tokens provided by Okta have an expiration time. It is possible **to
+Finally, as suggested above, the tokens provided by auth0 have an expiration time. It is possible **to
 transparently renew them using a refresh token** (so the user doesn't have to re-login when the tokens expire) but we didn't implement that.
 
 ## Conclusion
 
-While adding OAuth2 authentication to an S3 static bucket with Okta (or any other OAuth2 provider) is possible in an AWS-integrated and secure manner, it's certainly not straightforward.
+While adding OAuth2 authentication to an S3 static bucket with auth0 (or any other OAuth2 provider) is possible in an AWS-integrated and secure manner, it's certainly not straightforward.
 
-It requires writing a middleware between AWS and the OAuth2 provider (Okta in our case) using Lambda@Edge. We had to do the following ourselves:
+It requires writing a middleware between AWS and the OAuth2 provider (auth0 in our case) using Lambda@Edge. We had to do the following ourselves:
 * Validate the user authentication
 * Remember the user authentication
 * Refresh the user authentication (not implemented in our solution)
@@ -114,4 +114,4 @@ Finally, a bunch of AWS resources must be created to glue everything together an
 But it's worth it, because it works and our website is now more secure.
 
 You can find the code of the Lambda@Edge as well as the infrastructure (Terraform) here:
-[https://github.com/GuiTeK/aws-s3-oauth2-okta](https://github.com/GuiTeK/aws-s3-oauth2-okta)
+[https://github.com/GuiTeK/aws-s3-oauth2-auth0](https://github.com/GuiTeK/aws-s3-oauth2-auth0)

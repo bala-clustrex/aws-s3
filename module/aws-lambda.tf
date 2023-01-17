@@ -4,9 +4,9 @@ resource "local_file" "auth_lambda_file" {
   content = templatefile("${path.module}/auth.js.tpl", {
     ssm_param_name_jwt_secret = aws_ssm_parameter.jwt_secret.name,
 
-    ssm_param_name_okta_client_id     = aws_ssm_parameter.okta_client_id.name,
-    ssm_param_name_okta_client_secret = aws_ssm_parameter.okta_client_secret.name,
-    ssm_param_name_okta_domain        = aws_ssm_parameter.okta_domain.name,
+    ssm_param_name_auth0_client_id     = aws_ssm_parameter.auth0_client_id.name,
+    ssm_param_name_auth0_client_secret = aws_ssm_parameter.auth0_client_secret.name,
+    ssm_param_name_auth0_domain        = aws_ssm_parameter.auth0_domain.name,
 
     ssm_param_name_auth_cookie_name    = aws_ssm_parameter.auth_cookie_name.name,
     ssm_param_name_auth_cookie_ttl_sec = aws_ssm_parameter.auth_cookie_ttl_sec.name
@@ -28,7 +28,7 @@ resource "aws_lambda_function" "auth" {
   source_code_hash = data.archive_file.auth_lambda_package.output_base64sha256
 
   runtime = "nodejs12.x"
-  handler = "auth.auth"
+  handler = "auth0_auth.auth0_auth"
 
   publish = true
 }
